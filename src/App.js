@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { withAuthenticator } from 'aws-amplify-react';
-import { API, graphqlOperation } from 'aws-amplify';
+import { API, graphqlOperation, Auth } from 'aws-amplify';
 import '@aws-amplify/ui/dist/style.css';
 
 import { createNote, deleteNote, updateNote } from './graphql/mutations';
@@ -20,6 +20,7 @@ function App() {
   const [notes, setNotes] = useState([]);
   const [note, setNote] = useState('');
   const [selectedItem, setSelectedItem] = useState({});
+  const [userName, setUserName] = useState('');
 
   const handleChangeNote = event => setNote(event.target.value);
 
@@ -66,14 +67,20 @@ function App() {
     setNotes(result.data.listNotes.items);
   };
 
+  const getUserName = async () => {
+    const cognitoUser = await Auth.currentAuthenticatedUser();
+    setUserName(cognitoUser.username);
+  };
+
   useEffect(() => {
     onGetNotes();
+    getUserName();
   }, []);
 
   // onCreateNote Subscription
   useEffect(() => {
     const createSubscription = API.graphql(
-      graphqlOperation(onCreateNote)
+      graphqlOperation(onCreateNote, { owner: userName })
     ).subscribe({
       next: res => {
         const newNote = res.value.data.onCreateNote;
@@ -83,7 +90,7 @@ function App() {
     });
 
     const deleteSubscription = API.graphql(
-      graphqlOperation(onDeleteNote)
+      graphqlOperation(onDeleteNote, { owner: userName })
     ).subscribe({
       next: noteData => {
         const deleteNote = noteData.value.data.onDeleteNote;
@@ -92,7 +99,7 @@ function App() {
     });
 
     const updateSubscription = API.graphql(
-      graphqlOperation(onUpdateNote)
+      graphqlOperation(onUpdateNote, { owner: userName })
     ).subscribe({
       next: noteData => {
         const updatedNote = noteData.value.data.onUpdateNote;
@@ -111,6 +118,7 @@ function App() {
       deleteSubscription.unsubscribe();
       updateSubscription.unsubscribe();
     };
+    // eslint-disable-next-line
   }, [notes]);
 
   return (
