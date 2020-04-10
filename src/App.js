@@ -12,7 +12,8 @@ import {
 import { listNotes } from './graphql/queries';
 
 const signUpConfig = {
-  header: 'Note Application',
+  header: 'Amplify Note Taker',
+  defaultCountryCode: '880',
   includeGreetings: true
 };
 
